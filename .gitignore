@@ -1,0 +1,122 @@
+# =============================================================================
+# .gitignore – OS-JavaFX-GenAI Integrated Telemetry System
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# macOS
+# ---------------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# ---------------------------------------------------------------------------
+# Linux Kernel build artefacts
+# ---------------------------------------------------------------------------
+kernel/build-*/
+kernel/*.o
+kernel/*.ko
+kernel/*.a
+kernel/*.s
+kernel/*.symtypes
+kernel/*.order
+kernel/Module.symvers
+kernel/.tmp_versions/
+kernel/.cache.mk
+kernel/vmlinux
+kernel/vmlinux.o
+kernel/System.map
+kernel/bzImage
+kernel/arch/x86/boot/bzImage
+
+# Root-level kernel build output (when building from repo root)
+*.o
+*.ko
+*.a
+*.s
+
+# ---------------------------------------------------------------------------
+# Java / Maven
+# ---------------------------------------------------------------------------
+dashboard/target/
+dashboard/.mvn/
+dashboard/*.class
+dashboard/*.jar
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven wrapper caches
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE artefacts
+.idea/
+*.iml
+*.ipr
+*.iws
+.eclipse/
+.settings/
+.project
+.classpath
+*.factorypath
+
+# ---------------------------------------------------------------------------
+# Gradle (if used in the future)
+# ---------------------------------------------------------------------------
+.gradle/
+build/
+!**/src/**/build/
+!**/src/**/gradle/
+
+# ---------------------------------------------------------------------------
+# Log files
+# ---------------------------------------------------------------------------
+*.log
+logs/
+
+# ---------------------------------------------------------------------------
+# QEMU / disk images
+# ---------------------------------------------------------------------------
+*.img
+*.qcow2
+*.iso
+rootfs.ext4
+
+# ---------------------------------------------------------------------------
+# Compiled benchmark binaries
+# ---------------------------------------------------------------------------
+benchmarks/matrix_mult
+benchmarks/*.o
+
+# ---------------------------------------------------------------------------
+# Temporary files
+# ---------------------------------------------------------------------------
+/tmp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# Environment / secrets
+# ---------------------------------------------------------------------------
+.env
+.env.*
+*.pem
+*.key
+*.pub
+id_rsa
+id_ed25519
