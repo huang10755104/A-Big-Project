@@ -62,6 +62,33 @@ A-Big-Project/
 
 ---
 
+## Windows/WSL2 Setup Guide
+
+1) Install WSL2 (Ubuntu) from the Microsoft Store and update the toolchain:
+```bash
+sudo apt update
+sudo apt install gcc-x86-64-linux-gnu build-essential flex bison libncurses-dev libssl-dev libelf-dev bc
+```
+`build_kernel.sh` will detect WSL2 automatically. If `/lib/modules/$(uname -r)/build` is missing, the kernel Makefile falls back to `~/linux/build-x86_64` (the default `KERNEL_SRC` build dir).
+
+2) Build and boot the kernel from WSL2:
+```bash
+export KERNEL_SRC=~/linux
+./scripts/build_kernel.sh
+./scripts/run_qemu.sh    # uses TCG in WSL2 (no KVM/WHPX inside WSL)
+```
+SSH stays on `localhost:2222`; allow this port through the Windows firewall if prompted.
+
+3) Run the JavaFX dashboard natively on Windows (outside WSL):
+```powershell
+winget install EclipseAdoptium.Temurin.17.JDK Maven.Maven
+cd dashboard
+mvn clean javafx:run
+```
+The JavaFX Maven plugin now auto-detects `windows-x86_64` and downloads the right natives. Use host `127.0.0.1` / port `2222` to connect to QEMU.
+
+---
+
 ### 1. Build the Kernel
 
 ```bash

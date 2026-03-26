@@ -19,6 +19,9 @@
 # otherwise auto-detect based on the build host architecture.
 # ---------------------------------------------------------------------------
 HOST_ARCH := $(shell uname -m)
+UNAME_S   := $(shell uname -s)
+UNAME_R   := $(shell uname -r)
+IS_WSL    := $(findstring Microsoft,$(UNAME_R))
 
 ifeq ($(CROSS_COMPILE),)
     ifeq ($(HOST_ARCH),arm64)
@@ -40,12 +43,20 @@ OBJDUMP := $(CROSS_COMPILE)objdump
 # On macOS (Darwin), uname -r returns Darwin version, not a Linux kernel version.
 # The KDIR should be passed explicitly from build_kernel.sh or specified manually.
 # ---------------------------------------------------------------------------
-ifeq ($(shell uname -s),Darwin)
+ifeq ($(UNAME_S),Darwin)
     # macOS: Default to a typical cross-compilation build directory
     KDIR ?= $(HOME)/linux/build-x86_64
+else ifneq ($(IS_WSL),)
+    # WSL2: fall back to the local kernel build tree if system headers are absent
+    DEFAULT_KDIR := /lib/modules/$(UNAME_R)/build
+    ifneq ($(wildcard $(DEFAULT_KDIR)),)
+        KDIR ?= $(DEFAULT_KDIR)
+    else
+        KDIR ?= $(HOME)/linux/build-x86_64
+    endif
 else
     # Linux: Use the running kernel's headers
-    KDIR ?= /lib/modules/$(shell uname -r)/build
+    KDIR ?= /lib/modules/$(UNAME_R)/build
 endif
 
 # ---------------------------------------------------------------------------
