@@ -1,0 +1,3 @@
+# This directory holds kernel patch files (.diff / .patch).
+# Place your kernel diffs here before applying them with:
+#   patch -p1 < patches/your_patch.patch
