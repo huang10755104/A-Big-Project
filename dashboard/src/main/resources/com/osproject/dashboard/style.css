@@ -1,0 +1,358 @@
+/*
+ * CASTLE Lab - Research-Grade Analytics Suite
+ * Professional Dark Mode Theme with Neon Accents
+ *
+ * Color Palette:
+ * - Background: Deep charcoal (#0d1117, #161b22, #1e1e1e)
+ * - Text: Light gray (#e0e0e0, #c9d1d9)
+ * - Accent: Neon green (#00ff88, #4caf50) and cyan blue (#00d4ff, #58a6ff)
+ * - Borders: Subtle gray (#30363d)
+ * - Monospace: 'Consolas', 'Monaco', 'Courier New', monospace
+ */
+
+/* ========================================================================
+   ROOT STYLING - Base application theme
+   ======================================================================== */
+
+.root {
+    -fx-background-color: #0d1117;
+    -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    -fx-font-size: 12pt;
+    -fx-text-fill: #e0e0e0;
+}
+
+/* ========================================================================
+   TOOLBAR & TOP SECTION
+   ======================================================================== */
+
+.toolbar {
+    -fx-background-color: linear-gradient(to bottom, #161b22 0%, #0d1117 100%);
+    -fx-border-color: #00ff88;
+    -fx-border-width: 0 0 2 0;
+    -fx-padding: 12;
+}
+
+.toolbar-title {
+    -fx-font-size: 20pt;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00ff88;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 136, 0.4), 8, 0.0, 0, 0);
+}
+
+/* ========================================================================
+   TEXT FIELDS & INPUT CONTROLS
+   ======================================================================== */
+
+.text-field {
+    -fx-background-color: #161b22;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #30363d;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    -fx-prompt-text-fill: #6e7681;
+}
+
+.text-field:focused {
+    -fx-border-color: #00d4ff;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.5), 6, 0.0, 0, 0);
+}
+
+/* ========================================================================
+   BUTTONS
+   ======================================================================== */
+
+.button {
+    -fx-background-color: #238636;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 11pt;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 6 16 6 16;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: #2ea043;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 136, 0.6), 10, 0.0, 0, 0);
+}
+
+.button:pressed {
+    -fx-background-color: #1a7f37;
+}
+
+/* Connect Button - Neon Green */
+#connectButton {
+    -fx-background-color: linear-gradient(to bottom, #00ff88 0%, #00cc6a 100%);
+    -fx-text-fill: #0d1117;
+    -fx-font-weight: bold;
+}
+
+#connectButton:hover {
+    -fx-background-color: linear-gradient(to bottom, #00ff88 0%, #00ff88 100%);
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 136, 0.8), 12, 0.0, 0, 0);
+}
+
+/* Stop Button - Red */
+#stopButton {
+    -fx-background-color: linear-gradient(to bottom, #f85149 0%, #da3633 100%);
+    -fx-text-fill: white;
+}
+
+#stopButton:hover {
+    -fx-background-color: linear-gradient(to bottom, #ff6b6b 0%, #f85149 100%);
+    -fx-effect: dropshadow(gaussian, rgba(248, 81, 73, 0.8), 12, 0.0, 0, 0);
+}
+
+/* Record Button - Orange */
+#recordButton {
+    -fx-background-color: linear-gradient(to bottom, #ff9800 0%, #fb8c00 100%);
+    -fx-text-fill: white;
+}
+
+#recordButton:hover {
+    -fx-background-color: linear-gradient(to bottom, #ffa726 0%, #ff9800 100%);
+    -fx-effect: dropshadow(gaussian, rgba(255, 152, 0, 0.8), 12, 0.0, 0, 0);
+}
+
+/* Export Button - Cyan */
+#exportButton {
+    -fx-background-color: linear-gradient(to bottom, #00d4ff 0%, #00a8cc 100%);
+    -fx-text-fill: #0d1117;
+    -fx-font-weight: bold;
+}
+
+#exportButton:hover {
+    -fx-background-color: linear-gradient(to bottom, #00d4ff 0%, #00d4ff 100%);
+    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.8), 12, 0.0, 0, 0);
+}
+
+/* Snapshot Button - Purple */
+#snapshotButton {
+    -fx-background-color: linear-gradient(to bottom, #a371f7 0%, #8957e5 100%);
+    -fx-text-fill: white;
+}
+
+#snapshotButton:hover {
+    -fx-background-color: linear-gradient(to bottom, #b392f0 0%, #a371f7 100%);
+    -fx-effect: dropshadow(gaussian, rgba(163, 113, 247, 0.8), 12, 0.0, 0, 0);
+}
+
+/* ========================================================================
+   LABELS
+   ======================================================================== */
+
+.label {
+    -fx-text-fill: #c9d1d9;
+    -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+#statusLabel {
+    -fx-text-fill: #58a6ff;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+
+#rssLabel {
+    -fx-text-fill: #00ff88;
+    -fx-font-size: 14pt;
+    -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 136, 0.3), 4, 0.0, 0, 0);
+}
+
+/* ========================================================================
+   SIDEBAR - Memory Statistics Panel
+   ======================================================================== */
+
+.sidebar {
+    -fx-background-color: #161b22;
+    -fx-border-color: #30363d;
+    -fx-border-width: 0 0 0 2;
+    -fx-padding: 16;
+}
+
+.sidebar-title {
+    -fx-font-size: 14pt;
+    -fx-font-weight: bold;
+    -fx-text-fill: #00d4ff;
+    -fx-effect: dropshadow(gaussian, rgba(0, 212, 255, 0.4), 6, 0.0, 0, 0);
+}
+
+.stat-label {
+    -fx-text-fill: #8b949e;
+    -fx-font-size: 10pt;
+}
+
+.stat-value {
+    -fx-text-fill: #00ff88;
+    -fx-font-size: 13pt;
+    -fx-font-weight: bold;
+}
+
+/* ========================================================================
+   LINE CHART - Professional telemetry visualization
+   ======================================================================== */
+
+.chart {
+    -fx-background-color: #0d1117;
+    -fx-border-color: #00ff88;
+    -fx-border-width: 2;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 10;
+}
+
+.chart-plot-background {
+    -fx-background-color: #161b22;
+}
+
+.chart-title {
+    -fx-text-fill: #c9d1d9;
+    -fx-font-size: 14pt;
+    -fx-font-weight: bold;
+}
+
+.axis {
+    -fx-tick-label-fill: #8b949e;
+    -fx-tick-label-font: 10pt 'Consolas', 'Monaco', 'Courier New', monospace;
+}
+
+.axis-label {
+    -fx-text-fill: #c9d1d9;
+    -fx-font-size: 11pt;
+    -fx-font-weight: bold;
+}
+
+/* Chart Grid Lines */
+.chart-vertical-grid-lines,
+.chart-horizontal-grid-lines {
+    -fx-stroke: #30363d;
+    -fx-stroke-width: 1;
+    -fx-stroke-dash-array: 5 5;
+}
+
+.chart-vertical-zero-line,
+.chart-horizontal-zero-line {
+    -fx-stroke: #484f58;
+    -fx-stroke-width: 1.5;
+}
+
+/* ========================================================================
+   LINE CHART SERIES - Color-coded data series
+   ======================================================================== */
+
+/* Series 0: Voluntary context switches - Neon Green */
+.chart-series-line.series0 {
+    -fx-stroke: #00ff88;
+    -fx-stroke-width: 2;
+}
+.chart-line-symbol.series0 {
+    -fx-background-color: #00ff88, white;
+}
+
+/* Series 1: Involuntary context switches - Neon Blue */
+.chart-series-line.series1 {
+    -fx-stroke: #00d4ff;
+    -fx-stroke-width: 2;
+}
+.chart-line-symbol.series1 {
+    -fx-background-color: #00d4ff, white;
+}
+
+/* Series 2: Minor page faults - Yellow */
+.chart-series-line.series2 {
+    -fx-stroke: #ffd60a;
+    -fx-stroke-width: 2;
+}
+.chart-line-symbol.series2 {
+    -fx-background-color: #ffd60a, white;
+}
+
+/* Series 3: Major page faults - Red */
+.chart-series-line.series3 {
+    -fx-stroke: #f85149;
+    -fx-stroke-width: 2;
+}
+.chart-line-symbol.series3 {
+    -fx-background-color: #f85149, white;
+}
+
+/* Snapshot Series (overlay) - Dashed lines with reduced opacity */
+.chart-series-line.series4,
+.chart-series-line.series5,
+.chart-series-line.series6,
+.chart-series-line.series7 {
+    -fx-stroke-dash-array: 10 5;
+    -fx-stroke-width: 1.5;
+    -fx-opacity: 0.6;
+}
+
+.chart-series-line.series4 { -fx-stroke: #00ff88; }
+.chart-series-line.series5 { -fx-stroke: #00d4ff; }
+.chart-series-line.series6 { -fx-stroke: #ffd60a; }
+.chart-series-line.series7 { -fx-stroke: #f85149; }
+
+/* ========================================================================
+   CHART LEGEND
+   ======================================================================== */
+
+.chart-legend {
+    -fx-background-color: #161b22;
+    -fx-border-color: #30363d;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 8;
+}
+
+.chart-legend-item {
+    -fx-text-fill: #c9d1d9;
+    -fx-font-size: 10pt;
+}
+
+.chart-legend-item-symbol {
+    -fx-padding: 4;
+}
+
+/* ========================================================================
+   STATUS BAR & BOTTOM SECTION
+   ======================================================================== */
+
+.status-bar {
+    -fx-background-color: linear-gradient(to top, #161b22 0%, #0d1117 100%);
+    -fx-border-color: #00d4ff;
+    -fx-border-width: 2 0 0 0;
+    -fx-padding: 8 12 8 12;
+}
+
+/* ========================================================================
+   SCROLL BARS (for future expansion)
+   ======================================================================== */
+
+.scroll-bar {
+    -fx-background-color: #161b22;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #30363d;
+    -fx-background-radius: 4;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #484f58;
+}
+
+.scroll-bar .track {
+    -fx-background-color: #0d1117;
+}
+
+/* ========================================================================
+   VBOX & HBOX STYLING
+   ======================================================================== */
+
+.vbox, .hbox {
+    -fx-spacing: 8;
+}

@@ -228,14 +228,14 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
 
     /**
      * Parses a line of the form:
-     * {@code nvcsw=123 nivcsw=45 min_flt=6789 maj_flt=0}
+     * {@code nvcsw=123 nivcsw=45 min_flt=6789 maj_flt=0 rss=1024}
      */
     private ProcInfo parseProcInfoLine(int pid, String line) {
         if (line == null || line.isBlank()) {
             throw new IllegalStateException("Empty response from QEMU guest");
         }
 
-        long nvcsw = 0, nivcsw = 0, minFlt = 0, majFlt = 0;
+        long nvcsw = 0, nivcsw = 0, minFlt = 0, majFlt = 0, rss = 0;
         for (String token : line.trim().split("\\s+")) {
             String[] kv = token.split("=", 2);
             if (kv.length != 2) continue;
@@ -245,8 +245,9 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
                 case "nivcsw"  -> nivcsw = val;
                 case "min_flt" -> minFlt = val;
                 case "maj_flt" -> majFlt = val;
+                case "rss"     -> rss    = val;
             }
         }
-        return new ProcInfo(pid, nvcsw, nivcsw, minFlt, majFlt, System.currentTimeMillis());
+        return new ProcInfo(pid, nvcsw, nivcsw, minFlt, majFlt, rss, System.currentTimeMillis());
     }
 }
