@@ -12,36 +12,41 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.osproject.dashboard.DashboardController">
+            fx:controller="com.osproject.dashboard.DashboardController"
+            stylesheets="@style.css">
 
     <!-- ================================================================
-         Top toolbar: connection parameters
+         Top toolbar: connection parameters & controls
     ================================================================ -->
     <top>
-        <VBox spacing="6" style="-fx-background-color: #2b2b2b; -fx-padding: 10;">
-            <Label text="OS Kernel Telemetry Dashboard"
-                   style="-fx-font-size: 18; -fx-font-weight: bold; -fx-text-fill: #e0e0e0;"/>
+        <VBox spacing="10" styleClass="toolbar">
+            <Label text="OS Kernel Telemetry Dashboard - CASTLE Lab Edition"
+                   styleClass="toolbar-title"/>
 
-            <HBox spacing="8" alignment="CENTER_LEFT">
-                <Label text="Host:" style="-fx-text-fill: #cfcfcf;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Label text="Host:" styleClass="label"/>
                 <TextField fx:id="hostField" promptText="localhost" prefWidth="120"/>
 
-                <Label text="Port:" style="-fx-text-fill: #cfcfcf;"/>
+                <Label text="Port:" styleClass="label"/>
                 <TextField fx:id="portField" promptText="2222" prefWidth="60"/>
 
-                <Label text="User:" style="-fx-text-fill: #cfcfcf;"/>
+                <Label text="User:" styleClass="label"/>
                 <TextField fx:id="userField" promptText="root" prefWidth="80"/>
 
-                <Label text="Password:" style="-fx-text-fill: #cfcfcf;"/>
+                <Label text="Password:" styleClass="label"/>
                 <TextField fx:id="passField" promptText="(password)" prefWidth="100"/>
 
-                <Label text="PID:" style="-fx-text-fill: #cfcfcf;"/>
+                <Label text="PID:" styleClass="label"/>
                 <TextField fx:id="pidField" promptText="1" prefWidth="60"/>
+            </HBox>
 
-                <Button fx:id="connectButton" text="Connect" onAction="#onConnect"
-                        style="-fx-background-color: #4caf50; -fx-text-fill: white;"/>
-                <Button fx:id="stopButton" text="Stop" onAction="#onStop"
-                        style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+            <HBox spacing="10" alignment="CENTER_LEFT">
+                <Button fx:id="connectButton" text="Connect" onAction="#onConnect"/>
+                <Button fx:id="stopButton" text="Stop" onAction="#onStop"/>
+                <Button fx:id="recordButton" text="Record" onAction="#onRecord"
+                        style="-fx-background-color: #ff9800; -fx-text-fill: white;"/>
+                <Button fx:id="exportButton" text="Export CSV" onAction="#onExport"/>
+                <Button fx:id="snapshotButton" text="Snapshot" onAction="#onSnapshot"/>
             </HBox>
         </VBox>
     </top>
@@ -50,8 +55,7 @@
          Center: real-time line chart
     ================================================================ -->
     <center>
-        <LineChart fx:id="telemetryChart"
-                   style="-fx-background-color: #1e1e1e;">
+        <LineChart fx:id="telemetryChart" styleClass="chart">
             <xAxis>
                 <NumberAxis fx:id="xAxis" label="Time (s)" autoRanging="true"/>
             </xAxis>
@@ -62,12 +66,32 @@
     </center>
 
     <!-- ================================================================
+         Right sidebar: memory statistics
+    ================================================================ -->
+    <right>
+        <VBox spacing="16" styleClass="sidebar" prefWidth="200">
+            <Label text="Memory Statistics" styleClass="sidebar-title"/>
+
+            <VBox spacing="8">
+                <Label text="Resident Set Size" styleClass="stat-label"/>
+                <Label fx:id="rssLabel" text="-- MB" styleClass="stat-value"/>
+            </VBox>
+
+            <VBox spacing="8">
+                <Label text="Status" styleClass="stat-label"/>
+                <Label text="Monitoring active process memory footprint in real-time."
+                       wrapText="true" styleClass="stat-label"
+                       style="-fx-font-size: 9pt; -fx-text-fill: #6e7681;"/>
+            </VBox>
+        </VBox>
+    </right>
+
+    <!-- ================================================================
          Bottom: status bar
     ================================================================ -->
     <bottom>
-        <HBox style="-fx-background-color: #333; -fx-padding: 4 10 4 10;">
-            <Label fx:id="statusLabel" text="Not connected."
-                   style="-fx-text-fill: #90caf9;"/>
+        <HBox styleClass="status-bar">
+            <Label fx:id="statusLabel" text="Not connected."/>
         </HBox>
     </bottom>
 

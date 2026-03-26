@@ -29,6 +29,7 @@
  * @nivcsw:       Involuntary context switches (task was preempted)
  * @min_flt:      Minor page faults (page present, no disk I/O required)
  * @maj_flt:      Major page faults (page not in memory, disk I/O required)
+ * @rss:          Resident Set Size in pages (physical memory footprint)
  */
 struct proc_info {
     pid_t  pid;
@@ -36,6 +37,7 @@ struct proc_info {
     unsigned long nivcsw;
     unsigned long min_flt;
     unsigned long maj_flt;
+    unsigned long rss;
 };
 
 /**
@@ -68,6 +70,14 @@ SYSCALL_DEFINE2(get_proc_info, pid_t, pid, struct proc_info __user *, uinfo)
     kinfo.nivcsw = task->nivcsw;      /* involuntary context switches */
     kinfo.min_flt = task->min_flt;    /* minor page faults            */
     kinfo.maj_flt = task->maj_flt;    /* major page faults            */
+
+    /* Retrieve Resident Set Size (RSS) in pages */
+    if (task->mm) {
+        kinfo.rss = get_mm_rss(task->mm);
+    } else {
+        /* Kernel threads have no mm; set RSS to 0 */
+        kinfo.rss = 0;
+    }
 
     put_task_struct(task);
 

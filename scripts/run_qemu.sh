@@ -68,7 +68,8 @@ case "${HOST_OS}" in
             echo "[qemu]          Expect ~3-5× slowdown compared to native execution."
             # Enable multi-threaded TCG for better performance on multi-core ARM64 hosts
             # thread=multi enables parallel execution of guest vCPUs
-            ACCEL_OPTION="-accel tcg,thread=multi,tb-size=1024"
+            # tb-size=2048 increases translation block cache for M4 Pro's 12 cores
+            ACCEL_OPTION="-accel tcg,thread=multi,tb-size=2048"
         else
             # x86_64 host: use KVM for near-native speed
             if [[ "${IS_WSL}" == true ]]; then

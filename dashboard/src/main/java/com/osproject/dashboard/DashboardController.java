@@ -9,8 +9,16 @@ import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Button;
+import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -49,7 +57,11 @@ public class DashboardController implements Initializable {
 
     @FXML private Button connectButton;
     @FXML private Button stopButton;
+    @FXML private Button recordButton;
+    @FXML private Button exportButton;
+    @FXML private Button snapshotButton;
     @FXML private Label  statusLabel;
+    @FXML private Label  rssLabel;
 
     // -----------------------------------------------------------------------
     // Chart series
@@ -60,10 +72,41 @@ public class DashboardController implements Initializable {
     private final XYChart.Series<Number, Number> minFlt = new XYChart.Series<>();
     private final XYChart.Series<Number, Number> majFlt = new XYChart.Series<>();
 
+    // Snapshot series for comparison (overlay)
+    private final XYChart.Series<Number, Number> snapshotNvcsw  = new XYChart.Series<>();
+    private final XYChart.Series<Number, Number> snapshotNivcsw = new XYChart.Series<>();
+    private final XYChart.Series<Number, Number> snapshotMinFlt = new XYChart.Series<>();
+    private final XYChart.Series<Number, Number> snapshotMajFlt = new XYChart.Series<>();
+
     // Elapsed tick counter (incremented every poll cycle)
     private final AtomicLong tick = new AtomicLong(0);
 
     private TelemetryService service;
+
+    // Recording state for CSV export
+    private boolean isRecording = false;
+    private final List<DataPoint> recordedData = new ArrayList<>();
+
+    // Data point for CSV recording
+    private static class DataPoint {
+        long timestamp;
+        long tick;
+        long nvcsw;
+        long nivcsw;
+        long minFlt;
+        long majFlt;
+        long rss;
+
+        DataPoint(long timestamp, long tick, long nvcsw, long nivcsw, long minFlt, long majFlt, long rss) {
+            this.timestamp = timestamp;
+            this.tick = tick;
+            this.nvcsw = nvcsw;
+            this.nivcsw = nivcsw;
+            this.minFlt = minFlt;
+            this.majFlt = majFlt;
+            this.rss = rss;
+        }
+    }
 
     // -----------------------------------------------------------------------
     // Lifecycle
@@ -84,7 +127,15 @@ public class DashboardController implements Initializable {
         yAxis.setLabel("Count (delta)");
         yAxis.setAutoRanging(true);
 
+        // Initialize snapshot series (hidden by default)
+        snapshotNvcsw.setName("Snapshot: nvcsw");
+        snapshotNivcsw.setName("Snapshot: nivcsw");
+        snapshotMinFlt.setName("Snapshot: min_flt");
+        snapshotMajFlt.setName("Snapshot: maj_flt");
+
         stopButton.setDisable(true);
+        exportButton.setDisable(true);
+        snapshotButton.setDisable(true);
     }
 
     // -----------------------------------------------------------------------
@@ -151,6 +202,7 @@ public class DashboardController implements Initializable {
         statusLabel.setText("Connected – polling PID " + pid);
         connectButton.setDisable(true);
         stopButton.setDisable(false);
+        snapshotButton.setDisable(false);
         service.start();
     }
 
@@ -162,6 +214,95 @@ public class DashboardController implements Initializable {
         statusLabel.setText("Stopped.");
         connectButton.setDisable(false);
         stopButton.setDisable(true);
+        snapshotButton.setDisable(true);
+        if (isRecording) {
+            exportButton.setDisable(false);
+        }
+    }
+
+    @FXML
+    private void onRecord() {
+        if (!isRecording) {
+            // Start recording
+            isRecording = true;
+            recordedData.clear();
+            recordButton.setText("Stop Recording");
+            recordButton.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+            statusLabel.setText("Recording data...");
+            exportButton.setDisable(true);
+        } else {
+            // Stop recording
+            isRecording = false;
+            recordButton.setText("Record");
+            recordButton.setStyle("-fx-background-color: #ff9800; -fx-text-fill: white;");
+            statusLabel.setText("Recording stopped. " + recordedData.size() + " data points captured.");
+            exportButton.setDisable(false);
+        }
+    }
+
+    @FXML
+    private void onExport() {
+        if (recordedData.isEmpty()) {
+            statusLabel.setText("Error: No recorded data to export.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export Telemetry Data");
+        fileChooser.setInitialFileName("telemetry_data.csv");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+
+        Stage stage = (Stage) exportButton.getScene().getWindow();
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file != null) {
+            try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
+                // Write CSV header
+                writer.println("Timestamp,Tick,NVCSW,NIVCSW,MinFlt,MajFlt,RSS");
+
+                // Write data points
+                for (DataPoint dp : recordedData) {
+                    writer.printf("%d,%d,%d,%d,%d,%d,%d%n",
+                            dp.timestamp, dp.tick, dp.nvcsw, dp.nivcsw,
+                            dp.minFlt, dp.majFlt, dp.rss);
+                }
+
+                statusLabel.setText("Exported " + recordedData.size() + " data points to " + file.getName());
+            } catch (IOException e) {
+                statusLabel.setText("Error: Failed to export data - " + e.getMessage());
+            }
+        }
+    }
+
+    @FXML
+    private void onSnapshot() {
+        // Save current chart data as a snapshot for overlay comparison
+        snapshotNvcsw.getData().clear();
+        snapshotNivcsw.getData().clear();
+        snapshotMinFlt.getData().clear();
+        snapshotMajFlt.getData().clear();
+
+        // Deep copy current series data
+        for (XYChart.Data<Number, Number> data : nvcsw.getData()) {
+            snapshotNvcsw.getData().add(new XYChart.Data<>(data.getXValue(), data.getYValue()));
+        }
+        for (XYChart.Data<Number, Number> data : nivcsw.getData()) {
+            snapshotNivcsw.getData().add(new XYChart.Data<>(data.getXValue(), data.getYValue()));
+        }
+        for (XYChart.Data<Number, Number> data : minFlt.getData()) {
+            snapshotMinFlt.getData().add(new XYChart.Data<>(data.getXValue(), data.getYValue()));
+        }
+        for (XYChart.Data<Number, Number> data : majFlt.getData()) {
+            snapshotMajFlt.getData().add(new XYChart.Data<>(data.getXValue(), data.getYValue()));
+        }
+
+        // Add snapshot series to chart if not already added
+        if (!telemetryChart.getData().contains(snapshotNvcsw)) {
+            telemetryChart.getData().addAll(snapshotNvcsw, snapshotNivcsw, snapshotMinFlt, snapshotMajFlt);
+        }
+
+        statusLabel.setText("Snapshot saved! Now you can compare with live data.");
     }
 
     // -----------------------------------------------------------------------
@@ -195,6 +336,19 @@ public class DashboardController implements Initializable {
         trimSeries(nivcsw);
         trimSeries(minFlt);
         trimSeries(majFlt);
+
+        // Update RSS display (convert pages to MB, assuming 4KB page size)
+        double rssMB = (info.rss() * 4.0) / 1024.0;
+        if (rssLabel != null) {
+            rssLabel.setText(String.format("RSS: %.2f MB (%d pages)", rssMB, info.rss()));
+        }
+
+        // Record data point if recording is active
+        if (isRecording) {
+            recordedData.add(new DataPoint(
+                    info.timestampMs(), t,
+                    dNvcsw, dNivcsw, dMinFlt, dMajFlt, info.rss()));
+        }
     }
 
     private void addPoint(XYChart.Series<Number, Number> series, long x, long y) {

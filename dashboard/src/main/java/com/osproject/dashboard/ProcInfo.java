@@ -10,5 +10,6 @@ public record ProcInfo(
         long   nivcsw,
         long   minFlt,
         long   majFlt,
+        long   rss,
         long   timestampMs
 ) {}
