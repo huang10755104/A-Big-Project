@@ -37,8 +37,16 @@ OBJDUMP := $(CROSS_COMPILE)objdump
 
 # ---------------------------------------------------------------------------
 # Kernel source tree – override with KDIR=/path/to/kernel on the command line
+# On macOS (Darwin), uname -r returns Darwin version, not a Linux kernel version.
+# The KDIR should be passed explicitly from build_kernel.sh or specified manually.
 # ---------------------------------------------------------------------------
-KDIR ?= /lib/modules/$(shell uname -r)/build
+ifeq ($(shell uname -s),Darwin)
+    # macOS: Default to a typical cross-compilation build directory
+    KDIR ?= $(HOME)/linux/build-x86_64
+else
+    # Linux: Use the running kernel's headers
+    KDIR ?= /lib/modules/$(shell uname -r)/build
+endif
 
 # ---------------------------------------------------------------------------
 # Build flags
