@@ -26,6 +26,12 @@ BZIMAGE="${BUILD_DIR}/arch/x86/boot/bzImage"
 HOST_ARCH="$(uname -m)"
 echo "[build] Host architecture: ${HOST_ARCH}"
 
+# Detect WSL2 (Windows Subsystem for Linux)
+if grep -qi "microsoft" /proc/version 2>/dev/null; then
+    echo "[build] WSL2 environment detected."
+    echo "[build] Tip: ensure x86_64-linux-gnu-gcc is installed (sudo apt install gcc-x86-64-linux-gnu)."
+fi
+
 if [[ "${HOST_ARCH}" == "arm64" || "${HOST_ARCH}" == "aarch64" ]]; then
     # Apple Silicon / generic aarch64 – cross-compile for x86_64
     export ARCH=x86_64

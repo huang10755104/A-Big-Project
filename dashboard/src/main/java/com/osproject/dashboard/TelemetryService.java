@@ -11,6 +11,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
+import java.util.Locale;
 
 /**
  * Background {@link ScheduledService} that polls the QEMU guest every
@@ -150,7 +151,9 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
             }
         }
 
-        session = jsch.getSession(username, host, port);
+        String targetHost = resolveLoopbackHost();
+
+        session = jsch.getSession(username, targetHost, port);
         if (keyPath == null || keyPath.isBlank()) {
             session.setPassword(password);
         }
@@ -160,6 +163,8 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
         // For production use, set StrictHostKeyChecking=yes and provide
         // a known_hosts file by calling jsch.setKnownHosts(path).
         config.put("StrictHostKeyChecking", "no");
+        // Windows firewalls sometimes block IPv6 loopback; force IPv4 loopback when host=localhost.
+        config.put("PreferredAuthentications", "publickey,password,keyboard-interactive");
         session.setConfig(config);
         session.setTimeout(5_000);
         session.connect();
@@ -206,6 +211,19 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
                 channel.disconnect();
             }
         }
+    }
+
+    private String resolveLoopbackHost() {
+        boolean isWindows = System.getProperty("os.name", "")
+                .toLowerCase(Locale.ENGLISH)
+                .contains("win");
+
+        if (isWindows && ("localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host))) {
+            // Avoid Windows firewall rules that may drop IPv6 localhost traffic.
+            return "127.0.0.1";
+        }
+
+        return host;
     }
 
     /**

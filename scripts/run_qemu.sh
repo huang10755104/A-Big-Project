@@ -29,26 +29,61 @@ SSH_GUEST_PORT="${SSH_GUEST_PORT:-22}"
 # Host architecture check (Apple Silicon compatibility)
 # ---------------------------------------------------------------------------
 HOST_ARCH="$(uname -m)"
+HOST_OS="$(uname -s)"
+HOST_RELEASE="$(uname -r)"
+IS_WSL=false
+
+if echo "${HOST_RELEASE}" | grep -qi "microsoft"; then
+    IS_WSL=true
+fi
+
 echo "[qemu] Host architecture: ${HOST_ARCH}"
 
-# On macOS ARM64 QEMU runs x86_64 guests via TCG emulation.
-# Warn if hvf is unavailable (it isn't for cross-arch emulation).
-if [[ "${HOST_ARCH}" == "arm64" || "${HOST_ARCH}" == "aarch64" ]]; then
-    echo "[qemu] WARNING: Running x86_64 guest on ARM64 host via TCG (software emulation)."
-    echo "[qemu]          Expect ~3-5× slowdown compared to native execution."
-    # Enable multi-threaded TCG for better performance on multi-core ARM64 hosts
-    # thread=multi enables parallel execution of guest vCPUs
-    ACCEL_OPTION="-accel tcg,thread=multi,tb-size=1024"
-else
-    # x86_64 host: use KVM for near-native speed
-    if [[ -e /dev/kvm ]]; then
-        echo "[qemu] KVM detected – enabling hardware acceleration."
-        ACCEL_OPTION="-accel kvm"
-    else
-        echo "[qemu] KVM not available – falling back to TCG."
-        ACCEL_OPTION="-accel tcg"
-    fi
-fi
+case "${HOST_OS}" in
+    MINGW*|MSYS*|CYGWIN*|Windows_NT*)
+        echo "[qemu] Windows host detected."
+        if [[ "${HOST_ARCH}" == "x86_64" || "${HOST_ARCH}" == "amd64" ]]; then
+            if command -v qemu-system-x86_64 &>/dev/null && \
+               qemu-system-x86_64 -accel help 2>/dev/null | grep -qi whpx; then
+                ACCEL_OPTION="-accel whpx"
+                echo "[qemu] Using WHPX acceleration (Windows Hypervisor Platform)."
+            elif command -v qemu-system-x86_64 &>/dev/null && \
+                 qemu-system-x86_64 -accel help 2>/dev/null | grep -qi hax; then
+                ACCEL_OPTION="-accel hax"
+                echo "[qemu] Using HAXM acceleration."
+            else
+                ACCEL_OPTION="-accel tcg"
+                echo "[qemu] No Windows accelerators detected – falling back to TCG."
+            fi
+        else
+            ACCEL_OPTION="-accel tcg"
+            echo "[qemu] Non-x86 Windows host – falling back to TCG."
+        fi
+        ;;
+    *)
+        # On macOS ARM64 QEMU runs x86_64 guests via TCG emulation.
+        # Warn if hvf is unavailable (it isn't for cross-arch emulation).
+        if [[ "${HOST_ARCH}" == "arm64" || "${HOST_ARCH}" == "aarch64" ]]; then
+            echo "[qemu] WARNING: Running x86_64 guest on ARM64 host via TCG (software emulation)."
+            echo "[qemu]          Expect ~3-5× slowdown compared to native execution."
+            # Enable multi-threaded TCG for better performance on multi-core ARM64 hosts
+            # thread=multi enables parallel execution of guest vCPUs
+            ACCEL_OPTION="-accel tcg,thread=multi,tb-size=1024"
+        else
+            # x86_64 host: use KVM for near-native speed
+            if [[ "${IS_WSL}" == true ]]; then
+                echo "[qemu] WSL detected – hardware acceleration (KVM/WHPX) unavailable inside WSL. Using TCG."
+                ACCEL_OPTION="-accel tcg"
+            elif [[ -e /dev/kvm ]]; then
+                echo "[qemu] KVM detected – enabling hardware acceleration."
+                ACCEL_OPTION="-accel kvm"
+            else
+                echo "[qemu] KVM not available – falling back to TCG."
+                ACCEL_OPTION="-accel tcg"
+            fi
+        fi
+        ;;
+esac
 
 # ---------------------------------------------------------------------------
 # Sanity checks
