@@ -21,7 +21,7 @@ ROOTFS="${2:-${ROOTFS:-${HOME}/rootfs.ext4}}"
 
 # QEMU settings
 QEMU_MEM="${QEMU_MEM:-2G}"
-QEMU_CPUS="${QEMU_CPUS:-2}"
+QEMU_CPUS="${QEMU_CPUS:-4}"          # Increased to 4 for better M4 Pro utilization
 SSH_HOST_PORT="${SSH_HOST_PORT:-2222}"
 SSH_GUEST_PORT="${SSH_GUEST_PORT:-22}"
 
@@ -36,7 +36,9 @@ echo "[qemu] Host architecture: ${HOST_ARCH}"
 if [[ "${HOST_ARCH}" == "arm64" || "${HOST_ARCH}" == "aarch64" ]]; then
     echo "[qemu] WARNING: Running x86_64 guest on ARM64 host via TCG (software emulation)."
     echo "[qemu]          Expect ~3-5× slowdown compared to native execution."
-    ACCEL_OPTION="-accel tcg,tb-size=1024"
+    # Enable multi-threaded TCG for better performance on multi-core ARM64 hosts
+    # thread=multi enables parallel execution of guest vCPUs
+    ACCEL_OPTION="-accel tcg,thread=multi,tb-size=1024"
 else
     # x86_64 host: use KVM for near-native speed
     if [[ -e /dev/kvm ]]; then

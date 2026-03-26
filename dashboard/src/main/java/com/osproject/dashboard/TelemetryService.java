@@ -24,11 +24,18 @@ import java.util.Properties;
  *
  * Connection details default to {@code localhost:2222} (QEMU hostfwd) and
  * can be overridden before the service is started.
+ *
+ * <p><strong>Performance Optimization:</strong> This service maintains a persistent
+ * SSH session instead of creating a new connection for each poll. If the connection
+ * drops, it will automatically reconnect on the next poll attempt.
  */
 public class TelemetryService extends ScheduledService<ProcInfo> {
 
     /** Poll interval – 1 second. */
     public static final long POLL_INTERVAL_MS = 1_000;
+
+    /** Maximum reconnection attempts before giving up. */
+    private static final int MAX_RECONNECT_ATTEMPTS = 3;
 
     // SSH connection parameters (defaults target the QEMU instance)
     private String  host     = "localhost";
@@ -38,9 +45,30 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
     private String  keyPath  = null;     // path to private key, if used
     private int     targetPid = 1;
 
+    // Persistent SSH session and JSch instance
+    private JSch    jsch     = null;
+    private Session session  = null;
+
     public TelemetryService() {
         setPeriod(Duration.millis(POLL_INTERVAL_MS));
         setRestartOnFailure(true);
+    }
+
+    @Override
+    protected void succeeded() {
+        super.succeeded();
+    }
+
+    @Override
+    protected void cancelled() {
+        super.cancelled();
+        closeSession();
+    }
+
+    @Override
+    protected void failed() {
+        super.failed();
+        closeSession();
     }
 
     // -----------------------------------------------------------------------
@@ -60,37 +88,71 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
 
     @Override
     protected Task<ProcInfo> createTask() {
-        final String  h  = host;
-        final int     p  = port;
-        final String  u  = username;
-        final String  pw = password;
-        final String  kp = keyPath;
-        final int     pid = targetPid;
+        final int pid = targetPid;
 
         return new Task<>() {
             @Override
             protected ProcInfo call() throws Exception {
-                return fetchTelemetry(h, p, u, pw, kp, pid);
+                // Ensure we have a valid session (create or reconnect if needed)
+                ensureConnected();
+                return fetchTelemetry(pid);
             }
         };
     }
 
     // -----------------------------------------------------------------------
-    // SSH telemetry retrieval
+    // SSH session management
     // -----------------------------------------------------------------------
 
-    private ProcInfo fetchTelemetry(String host, int port,
-                                    String user, String pass,
-                                    String keyPath, int pid) throws Exception {
-        JSch jsch = new JSch();
-
-        if (keyPath != null && !keyPath.isBlank()) {
-            jsch.addIdentity(keyPath);
+    /**
+     * Ensures that the SSH session is connected. If the session is null or not
+     * connected, this method will attempt to establish a new connection with
+     * automatic retry logic.
+     */
+    private synchronized void ensureConnected() throws Exception {
+        if (session != null && session.isConnected()) {
+            return; // Already connected
         }
 
-        Session session = jsch.getSession(user, host, port);
+        // Need to (re)connect
+        closeSession();
+
+        int attempts = 0;
+        Exception lastException = null;
+
+        while (attempts < MAX_RECONNECT_ATTEMPTS) {
+            try {
+                connectSession();
+                return; // Success
+            } catch (Exception e) {
+                lastException = e;
+                attempts++;
+                if (attempts < MAX_RECONNECT_ATTEMPTS) {
+                    // Brief pause before retry
+                    Thread.sleep(500);
+                }
+            }
+        }
+
+        // All attempts failed
+        throw new Exception("Failed to connect after " + MAX_RECONNECT_ATTEMPTS +
+                          " attempts: " + (lastException != null ? lastException.getMessage() : "unknown error"));
+    }
+
+    /**
+     * Establishes a new SSH session using the configured connection parameters.
+     */
+    private void connectSession() throws Exception {
+        if (jsch == null) {
+            jsch = new JSch();
+            if (keyPath != null && !keyPath.isBlank()) {
+                jsch.addIdentity(keyPath);
+            }
+        }
+
+        session = jsch.getSession(username, host, port);
         if (keyPath == null || keyPath.isBlank()) {
-            session.setPassword(pass);
+            session.setPassword(password);
         }
 
         Properties config = new Properties();
@@ -101,9 +163,32 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
         session.setConfig(config);
         session.setTimeout(5_000);
         session.connect();
+    }
 
+    /**
+     * Closes the current SSH session if it exists.
+     */
+    private synchronized void closeSession() {
+        if (session != null) {
+            if (session.isConnected()) {
+                session.disconnect();
+            }
+            session = null;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // SSH telemetry retrieval
+    // -----------------------------------------------------------------------
+
+    /**
+     * Fetches telemetry data using the persistent SSH session.
+     * Uses a new ChannelExec for each command execution.
+     */
+    private ProcInfo fetchTelemetry(int pid) throws Exception {
+        ChannelExec channel = null;
         try {
-            ChannelExec channel = (ChannelExec) session.openChannel("exec");
+            channel = (ChannelExec) session.openChannel("exec");
             channel.setCommand("/usr/local/bin/get_proc_info " + pid);
             channel.setErrStream(System.err);
 
@@ -114,11 +199,12 @@ public class TelemetryService extends ScheduledService<ProcInfo> {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
                 line = reader.readLine();
             }
-            channel.disconnect();
 
             return parseProcInfoLine(pid, line);
         } finally {
-            session.disconnect();
+            if (channel != null && channel.isConnected()) {
+                channel.disconnect();
+            }
         }
     }
 

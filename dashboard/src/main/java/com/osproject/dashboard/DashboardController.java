@@ -136,13 +136,15 @@ public class DashboardController implements Initializable {
 
         service.setOnSucceeded(e -> {
             ProcInfo info = (ProcInfo) e.getSource().getValue();
-            Platform.runLater(() -> updateChart(info, state));
+            // Already on JavaFX Application Thread, no need for Platform.runLater
+            updateChart(info, state);
         });
 
         service.setOnFailed(e -> {
             Throwable ex = service.getException();
-            Platform.runLater(() -> statusLabel.setText(
-                    "Error: " + (ex != null ? ex.getMessage() : "unknown")));
+            // Already on JavaFX Application Thread, no need for Platform.runLater
+            statusLabel.setText(
+                    "Error: " + (ex != null ? ex.getMessage() : "unknown"));
         });
 
         tick.set(0);
