@@ -50,70 +50,43 @@ A-Big-Project/
 
 ## Quick Start
 
-### Prerequisites
+Clone the Linux kernel source before proceeding (required for all platforms):
 
-| Tool | Version | Install |
-|------|---------|---------|
-| JDK  | 17+     | `brew install openjdk@17` (macOS) or `sudo apt install openjdk-17-jdk` |
-| Maven | 3.9+   | `brew install maven` |
-| QEMU | 8+      | `brew install qemu` |
-| x86_64 cross-compiler | – | `brew install x86_64-elf-gcc` (macOS) or `sudo apt install gcc-x86-64-linux-gnu` |
-| Linux kernel source | 6.x | `git clone --depth=1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git` |
+```bash
+git clone --depth=1 https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git ~/linux
+```
 
 ---
 
-## Windows/WSL2 Setup Guide
+### Linux (Native x86_64)
 
-1) Install WSL2 (Ubuntu) from the Microsoft Store and update the toolchain:
+#### 1. Install Prerequisites
+
 ```bash
 sudo apt update
-sudo apt install gcc-x86-64-linux-gnu build-essential flex bison libncurses-dev libssl-dev libelf-dev bc
+sudo apt install gcc-x86-64-linux-gnu qemu-system-x86 openjdk-17-jdk maven \
+                 build-essential flex bison libncurses-dev libssl-dev libelf-dev bc
 ```
-`build_kernel.sh` will detect WSL2 automatically. If `/lib/modules/$(uname -r)/build` is missing, the kernel Makefile falls back to `~/linux/build-x86_64` (the default `KERNEL_SRC` build dir).
 
-2) Build and boot the kernel from WSL2:
+#### 2. Build the Kernel
+
 ```bash
 export KERNEL_SRC=~/linux
-./scripts/build_kernel.sh
-./scripts/run_qemu.sh    # uses TCG in WSL2 (no KVM/WHPX inside WSL)
-```
-SSH stays on `localhost:2222`; allow this port through the Windows firewall if prompted.
-
-3) Run the JavaFX dashboard natively on Windows (outside WSL):
-```powershell
-winget install EclipseAdoptium.Temurin.17.JDK Maven.Maven
-cd dashboard
-mvn clean javafx:run
-```
-The JavaFX Maven plugin now auto-detects `windows-x86_64` and downloads the right natives. Use host `127.0.0.1` / port `2222` to connect to QEMU.
-
----
-
-### 1. Build the Kernel
-
-```bash
-# Set the path to your cloned kernel source
-export KERNEL_SRC=~/linux
-
 ./scripts/build_kernel.sh
 # Produces: ~/linux/build-x86_64/arch/x86/boot/bzImage
 ```
 
-The script auto-detects the host architecture (`uname -m`) and sets
-`CROSS_COMPILE=x86_64-linux-gnu-` automatically on ARM64 / Apple Silicon hosts.
+`build_kernel.sh` detects the native x86_64 host and builds without a cross-compiler prefix.
 
----
-
-### 2. Boot in QEMU
+#### 3. Boot in QEMU
 
 ```bash
 ./scripts/run_qemu.sh
-# QEMU guest is reachable at: ssh -p 2222 root@localhost
+# QEMU uses KVM for near-native speed when /dev/kvm is available.
+# SSH: ssh -p 2222 root@localhost
 ```
 
----
-
-### 3. Run the JavaFX Dashboard
+#### 4. Run the JavaFX Dashboard
 
 ```bash
 cd dashboard
@@ -128,7 +101,100 @@ In the dashboard UI:
 
 ---
 
-### 4. Run Benchmarks (inside the QEMU guest)
+### Windows (WSL2 Hybrid Mode)
+
+This project uses a hybrid workflow on Windows: the kernel is compiled and QEMU runs inside **WSL2 (Ubuntu)**, while the JavaFX Dashboard runs natively on **Windows**.
+
+#### 1. Set Up WSL2 Toolchain
+
+Open a WSL2 (Ubuntu) terminal and install the build dependencies:
+
+```bash
+sudo apt update
+sudo apt install gcc-x86-64-linux-gnu qemu-system-x86 build-essential \
+                 flex bison libncurses-dev libssl-dev libelf-dev bc
+```
+
+`build_kernel.sh` automatically detects the WSL2 environment. If `/lib/modules/$(uname -r)/build` is missing, the kernel Makefile falls back to `~/linux/build-x86_64`.
+
+#### 2. Build and Boot the Kernel (inside WSL2)
+
+```bash
+export KERNEL_SRC=~/linux
+./scripts/build_kernel.sh
+./scripts/run_qemu.sh
+# QEMU runs under TCG in WSL2 – hardware acceleration (KVM/WHPX) is unavailable inside WSL.
+# SSH is forwarded to localhost:2222 on the Windows host.
+```
+
+Allow port **2222** through the Windows Firewall if prompted.
+
+#### 3. Run the JavaFX Dashboard (natively on Windows)
+
+Open a **Windows** PowerShell terminal (outside WSL) and install the Java runtime and build tool:
+
+```powershell
+winget install EclipseAdoptium.Temurin.17.JDK
+winget install Maven.Maven
+```
+
+Then launch the dashboard:
+
+```powershell
+cd dashboard
+mvn clean javafx:run
+```
+
+The JavaFX Maven plugin auto-detects `windows-x86_64` and downloads the correct native libraries. Connect to **Host** = `127.0.0.1`, **Port** = `2222` to reach the QEMU guest running in WSL2.
+
+---
+
+### macOS (Apple Silicon M4 Pro)
+
+This configuration is optimised for the 12-core Apple Silicon M4 Pro. QEMU runs the x86_64 guest via **software TCG emulation** with several M4 Pro-specific tunings applied automatically by the scripts.
+
+#### 1. Install Prerequisites
+
+```bash
+brew install x86_64-elf-gcc qemu openjdk@17 maven
+```
+
+#### 2. Build the Kernel
+
+```bash
+export KERNEL_SRC=~/linux
+./scripts/build_kernel.sh
+# Produces: ~/linux/build-x86_64/arch/x86/boot/bzImage
+```
+
+`build_kernel.sh` detects the `arm64` host, sets `CROSS_COMPILE=x86_64-linux-gnu-`, and compiles with **`-j12`** to saturate all 12 cores of the M4 Pro. Adjust the `-j` value in the script if your machine has a different core count.
+
+#### 3. Boot in QEMU
+
+```bash
+./scripts/run_qemu.sh
+# Runs with: -accel tcg,thread=multi,tb-size=2048
+# tb-size=2048 enlarges the translation-block cache; thread=multi enables
+# parallel vCPU execution across the M4 Pro's performance cores.
+# SSH: ssh -p 2222 root@localhost
+```
+
+#### 4. Run the JavaFX Dashboard
+
+```bash
+cd dashboard
+mvn javafx:run
+```
+
+In the dashboard UI:
+1. Set **Host** = `localhost`, **Port** = `2222`.
+2. Enter the SSH **User** / **Password** for the QEMU guest.
+3. Enter the **PID** you want to monitor.
+4. Click **Connect** – the LineChart updates every second.
+
+---
+
+### Run Benchmarks (inside the QEMU guest)
 
 ```bash
 # CPU-bound
